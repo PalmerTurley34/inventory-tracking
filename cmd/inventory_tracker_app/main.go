@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/PalmerTurley34/inventory-tracking/internal/backend"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	backend.StartBackendServer()
 }
