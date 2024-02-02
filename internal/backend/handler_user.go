@@ -28,6 +28,11 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(params.Password) < 8 {
+		respondWithError(w, 400, "password must be at least 8 characters!")
+		return
+	}
+
 	hashedPass, err := bcrypt.GenerateFromPassword([]byte(params.Password), 0)
 	if err != nil {
 		respondWithError(w, 400, fmt.Sprintf("Couldn't hash password: %v", err))
