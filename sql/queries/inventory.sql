@@ -1,6 +1,6 @@
 -- name: CreateInventoryItem :one
-INSERT INTO inventory_items (id, created_at, updated_at, name, description)
-VAlUES ($1, $2, $3, $4, $5)
+INSERT INTO inventory_items (id, created_at, updated_at, name)
+VAlUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: GetAllInventoryItems :many

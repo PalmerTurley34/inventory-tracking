@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/PalmerTurley34/inventory-tracking/internal/auth"
-	"github.com/PalmerTurley34/inventory-tracking/internal/database"
+	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 )
 
-type authedHandler func(http.ResponseWriter, *http.Request, database.User)
+type authedHandler func(http.ResponseWriter, *http.Request, db.User)
 
 func (cfg *apiConfig) middlewareAuth(handler authedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

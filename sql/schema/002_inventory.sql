@@ -5,7 +5,10 @@ CREATE TABLE inventory_items (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     name TEXT NOT NULL,
-    description TEXT
+    checked_out_at TIMESTAMP,
+    checked_in_at TIMESTAMP,
+    due_at TIMESTAMP,
+    user_id UUID REFERENCES users(id)
 );
 
 -- +goose Down

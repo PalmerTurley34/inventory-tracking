@@ -3,7 +3,7 @@
 //   sqlc v1.25.0
 // source: check_outs.sql
 
-package database
+package db
 
 import (
 	"context"
@@ -23,8 +23,8 @@ RETURNING id, user_id, inventory_item_id, created_at, updated_at, checked_out_at
 `
 
 type CheckInItemParams struct {
-	InventoryItemID uuid.UUID
-	UserID          uuid.UUID
+	InventoryItemID uuid.UUID `json:"inventory_item_id"`
+	UserID          uuid.UUID `json:"user_id"`
 }
 
 func (q *Queries) CheckInItem(ctx context.Context, arg CheckInItemParams) (InventoryCheckOut, error) {
@@ -49,12 +49,12 @@ RETURNING id, user_id, inventory_item_id, created_at, updated_at, checked_out_at
 `
 
 type CheckOutItemParams struct {
-	ID              uuid.UUID
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	UserID          uuid.UUID
-	InventoryItemID uuid.UUID
-	CheckedOutAt    time.Time
+	ID              uuid.UUID `json:"id"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	UserID          uuid.UUID `json:"user_id"`
+	InventoryItemID uuid.UUID `json:"inventory_item_id"`
+	CheckedOutAt    time.Time `json:"checked_out_at"`
 }
 
 func (q *Queries) CheckOutItem(ctx context.Context, arg CheckOutItemParams) (InventoryCheckOut, error) {

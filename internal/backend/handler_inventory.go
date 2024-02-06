@@ -1,14 +1,12 @@
 package backend
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/PalmerTurley34/inventory-tracking/internal/database"
-	"github.com/PalmerTurley34/inventory-tracking/internal/models"
+	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -26,25 +24,17 @@ func (cfg *apiConfig) createInventoryItem(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var dbDescription sql.NullString
-	if params.Description == "" {
-		dbDescription = sql.NullString{Valid: false}
-	} else {
-		dbDescription = sql.NullString{String: params.Description, Valid: true}
-	}
-
-	newItem, err := cfg.DB.CreateInventoryItem(r.Context(), database.CreateInventoryItemParams{
-		ID:          uuid.New(),
-		CreatedAt:   time.Now().UTC(),
-		UpdatedAt:   time.Now().UTC(),
-		Name:        params.Name,
-		Description: dbDescription,
+	newItem, err := cfg.DB.CreateInventoryItem(r.Context(), db.CreateInventoryItemParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		Name:      params.Name,
 	})
 	if err != nil {
 		respondWithError(w, 500, fmt.Sprintf("Couldn't create inventory item: %v", err))
 		return
 	}
-	respondWithJSON(w, 201, models.DBInventoryItemToResponse(newItem))
+	respondWithJSON(w, 201, newItem)
 }
 
 func (cfg *apiConfig) getAllInventoryItems(w http.ResponseWriter, r *http.Request) {
@@ -53,5 +43,5 @@ func (cfg *apiConfig) getAllInventoryItems(w http.ResponseWriter, r *http.Reques
 		respondWithError(w, 500, fmt.Sprintf("couldn't get inventory items: %v", err))
 		return
 	}
-	respondWithJSON(w, 200, models.DBInventoryItemsToResponse(items))
+	respondWithJSON(w, 200, items)
 }

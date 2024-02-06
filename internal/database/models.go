@@ -2,40 +2,42 @@
 // versions:
 //   sqlc v1.25.0
 
-package database
+package db
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type InventoryCheckOut struct {
-	ID              uuid.UUID
-	UserID          uuid.UUID
-	InventoryItemID uuid.UUID
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	CheckedOutAt    time.Time
-	CheckedInAt     sql.NullTime
+	ID              uuid.UUID  `json:"id"`
+	UserID          uuid.UUID  `json:"user_id"`
+	InventoryItemID uuid.UUID  `json:"inventory_item_id"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	CheckedOutAt    time.Time  `json:"checked_out_at"`
+	CheckedInAt     *time.Time `json:"checked_in_at"`
 }
 
 type InventoryItem struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Name        string
-	Description sql.NullString
+	ID           uuid.UUID  `json:"id"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+	Name         string     `json:"name"`
+	CheckedOutAt *time.Time `json:"checked_out_at"`
+	CheckedInAt  *time.Time `json:"checked_in_at"`
+	DueAt        *time.Time `json:"due_at"`
+	UserID       *uuid.UUID `json:"user_id"`
 }
 
 type User struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Name      string
-	Username  string
-	Password  string
-	IsAdmin   sql.NullBool
-	ApiKey    string
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Name      string    `json:"name"`
+	Username  string    `json:"username"`
+	Password  string    `json:"-"`
+	IsAdmin   bool      `json:"is_admin"`
+	ApiKey    string    `json:"api_key"`
 }

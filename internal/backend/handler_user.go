@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PalmerTurley34/inventory-tracking/internal/database"
-	"github.com/PalmerTurley34/inventory-tracking/internal/models"
+	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -39,7 +38,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser, err := cfg.DB.CreateUser(r.Context(), database.CreateUserParams{
+	newUser, err := cfg.DB.CreateUser(r.Context(), db.CreateUserParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -56,5 +55,5 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 500, fmt.Sprintf("Couldn't create user: %v", err))
 		return
 	}
-	respondWithJSON(w, 201, models.DBUserToResponse(newUser))
+	respondWithJSON(w, 201, newUser)
 }

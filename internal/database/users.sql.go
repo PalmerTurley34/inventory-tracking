@@ -3,7 +3,7 @@
 //   sqlc v1.25.0
 // source: users.sql
 
-package database
+package db
 
 import (
 	"context"
@@ -19,12 +19,12 @@ RETURNING id, created_at, updated_at, name, username, password, is_admin, api_ke
 `
 
 type CreateUserParams struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Name      string
-	Username  string
-	Password  string
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Name      string    `json:"name"`
+	Username  string    `json:"username"`
+	Password  string    `json:"-"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {

@@ -3,28 +3,26 @@
 //   sqlc v1.25.0
 // source: inventory.sql
 
-package database
+package db
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 const createInventoryItem = `-- name: CreateInventoryItem :one
-INSERT INTO inventory_items (id, created_at, updated_at, name, description)
-VAlUES ($1, $2, $3, $4, $5)
-RETURNING id, created_at, updated_at, name, description
+INSERT INTO inventory_items (id, created_at, updated_at, name)
+VAlUES ($1, $2, $3, $4)
+RETURNING id, created_at, updated_at, name, checked_out_at, checked_in_at, due_at, user_id
 `
 
 type CreateInventoryItemParams struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Name        string
-	Description sql.NullString
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Name      string    `json:"name"`
 }
 
 func (q *Queries) CreateInventoryItem(ctx context.Context, arg CreateInventoryItemParams) (InventoryItem, error) {
@@ -33,7 +31,6 @@ func (q *Queries) CreateInventoryItem(ctx context.Context, arg CreateInventoryIt
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Name,
-		arg.Description,
 	)
 	var i InventoryItem
 	err := row.Scan(
@@ -41,13 +38,16 @@ func (q *Queries) CreateInventoryItem(ctx context.Context, arg CreateInventoryIt
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Name,
-		&i.Description,
+		&i.CheckedOutAt,
+		&i.CheckedInAt,
+		&i.DueAt,
+		&i.UserID,
 	)
 	return i, err
 }
 
 const getAllInventoryItems = `-- name: GetAllInventoryItems :many
-SELECT id, created_at, updated_at, name, description FROM inventory_items
+SELECT id, created_at, updated_at, name, checked_out_at, checked_in_at, due_at, user_id FROM inventory_items
 `
 
 func (q *Queries) GetAllInventoryItems(ctx context.Context) ([]InventoryItem, error) {
@@ -64,7 +64,10 @@ func (q *Queries) GetAllInventoryItems(ctx context.Context) ([]InventoryItem, er
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Name,
-			&i.Description,
+			&i.CheckedOutAt,
+			&i.CheckedInAt,
+			&i.DueAt,
+			&i.UserID,
 		); err != nil {
 			return nil, err
 		}

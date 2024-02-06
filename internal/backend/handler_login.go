@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/PalmerTurley34/inventory-tracking/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,5 +31,5 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 401, "incorrect password, try again")
 		return
 	}
-	respondWithJSON(w, 200, models.DBUserToResponse(user))
+	respondWithJSON(w, 200, user)
 }

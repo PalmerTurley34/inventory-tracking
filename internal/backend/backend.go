@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/PalmerTurley34/inventory-tracking/internal/database"
+	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -15,7 +15,7 @@ import (
 )
 
 type apiConfig struct {
-	DB *database.Queries
+	DB *db.Queries
 }
 
 func healthcheck(w http.ResponseWriter, r *http.Request) {
@@ -35,12 +35,12 @@ func StartBackendServer() {
 		log.Fatal("DB_URL not found in environment")
 	}
 
-	db, err := sql.Open("postgres", dbURL)
+	database, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	dbQueries := database.New(db)
+	dbQueries := db.New(database)
 
 	cfg := apiConfig{DB: dbQueries}
 
