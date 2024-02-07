@@ -12,6 +12,19 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkUsernameExists = `-- name: CheckUsernameExists :one
+SELECT COUNT(*) as user_count
+FROM users
+WHERE username = $1
+`
+
+func (q *Queries) CheckUsernameExists(ctx context.Context, username string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkUsernameExists, username)
+	var user_count int64
+	err := row.Scan(&user_count)
+	return user_count, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, created_at, updated_at, name, username, password)
 VAlUES ($1, $2, $3, $4, $5, $6)

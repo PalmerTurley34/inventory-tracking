@@ -57,3 +57,24 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	respondWithJSON(w, 201, newUser)
 }
+
+func (cfg *apiConfig) validateUsername(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Username string `json:"username"`
+	}
+	params := parameters{}
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Couldn't decode request body: %v", err))
+		return
+	}
+	count, err := cfg.DB.CheckUsernameExists(r.Context(), params.Username)
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Couldn't get user count: %v", err))
+		return
+	}
+	type response struct {
+		Valid bool `json:"valid"`
+	}
+	respondWithJSON(w, 200, response{Valid: !(count > 0)})
+}

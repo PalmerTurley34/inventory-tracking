@@ -9,6 +9,8 @@ func newV1Router(cfg *apiConfig) *chi.Mux {
 
 	router.Post("/login", cfg.loginUser)
 
+	router.Post("/valid_username", cfg.validateUsername)
+
 	router.Get("/inventory_items", cfg.getAllInventoryItems)
 	router.Post("/inventory_items", cfg.createInventoryItem)
 
