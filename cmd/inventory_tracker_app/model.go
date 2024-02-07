@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"time"
 
+	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -10,8 +13,6 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
-
-var docStyle = lipgloss.NewStyle().Margin(1, 2).Border(lipgloss.RoundedBorder(), true)
 
 type appList int
 
@@ -31,17 +32,27 @@ const (
 )
 
 type model struct {
-	inventoryList  list.Model
-	commandList    list.Model
-	appOutputView  viewport.Model
+	// models
+	inventoryList list.Model
+	commandList   list.Model
+	appOutputView viewport.Model
+	// forms
 	loginForm      *huh.Form
 	initialForm    *huh.Form
 	createUserForm *huh.Form
-	page           appPage
-	focused        appList
-	spinner        spinner.Model
-	spinnerActive  bool
-	spinnerMsg     string
+	// app state
+	page      appPage
+	focused   appList
+	userInfo  db.User
+	headerMsg string
+	// loading spinner config
+	spinner       spinner.Model
+	spinnerActive bool
+	spinnerMsg    string
+	// http clinet
+	client *http.Client
+	// styles
+	headerStyle lipgloss.Style
 }
 
 func newModel() model {
@@ -51,9 +62,12 @@ func newModel() model {
 		appOutputView: viewport.New(30, 15),
 		focused:       invList,
 		page:          initialPage,
+		headerMsg:     "Login to begin",
 		initialForm:   NewInitialForm(),
 		spinner:       spinner.New(),
 		spinnerActive: false,
+		client:        &http.Client{Timeout: 10 * time.Second},
+		headerStyle:   successHeaderStyle,
 	}
 	m.inventoryList.Title = "Toy Box"
 	m.commandList.Title = "Commands"
@@ -82,16 +96,37 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
-	case userLoggedInMsg:
+	case loginSucessMsg:
+		m.headerMsg = fmt.Sprintf("Logged in as %s", msg.userInfo.Username)
+		m.headerStyle = successHeaderStyle
 		m.spinnerActive = false
 		m.spinner = spinner.New()
+		m.userInfo = msg.userInfo
 		m.page = mainPage
+	case loginFailMsg:
+		m.headerMsg = fmt.Sprintf("Error logging in: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+		m.spinnerActive = false
+		m.spinner = spinner.New()
+		m.loginForm = NewLoginForm()
+		initCmd := m.loginForm.Init()
+		return m, initCmd
 	case userCreatedMsg:
+		m.headerMsg = fmt.Sprintf("Successfully created user %s", msg.userInfo.Username)
+		m.headerStyle = successHeaderStyle
 		m.spinnerActive = false
 		m.spinner = spinner.New()
 		m.page = initialPage
 		m.initialForm = NewInitialForm()
 		initCmd := m.initialForm.Init()
+		return m, initCmd
+	case userCreateFailMsg:
+		m.headerMsg = fmt.Sprintf("Error creating user: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+		m.spinnerActive = false
+		m.spinner = spinner.New()
+		m.createUserForm = NewCreateUserForm()
+		initCmd := m.createUserForm.Init()
 		return m, initCmd
 	}
 
@@ -154,20 +189,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.spinnerActive {
-		return fmt.Sprintf("%v %v", m.spinner.View(), m.spinnerMsg)
+		return loadingHeaderStyle.Render(fmt.Sprintf("%v %v", m.spinner.View(), m.spinnerMsg))
 	}
+	header := m.headerStyle.Render(fmt.Sprintf("///%v//////", m.headerMsg))
+	var pageView string
 	if m.page == mainPage {
-		invListView := docStyle.Render(m.inventoryList.View())
-		cmdListView := docStyle.Render(m.commandList.View())
-		outputView := docStyle.Render(m.appOutputView.View())
+		var invListStyle, cmdListStyle lipgloss.Style
+		if m.focused == invList {
+			invListStyle = focusedListStyle
+			cmdListStyle = unFocusedListStyle
+		} else {
+			invListStyle = unFocusedListStyle
+			cmdListStyle = focusedListStyle
+		}
+		invListView := invListStyle.Render(m.inventoryList.View())
+		cmdListView := cmdListStyle.Render(m.commandList.View())
+		outputView := unFocusedListStyle.Render(m.appOutputView.View())
 		rightSide := lipgloss.JoinVertical(lipgloss.Right, cmdListView, outputView)
-		return lipgloss.JoinHorizontal(lipgloss.Top, invListView, rightSide)
+		pageView = lipgloss.JoinHorizontal(lipgloss.Top, invListView, rightSide)
 	} else if m.page == loginPage {
-		return m.loginForm.View()
+		pageView = m.loginForm.View()
 	} else if m.page == initialPage {
-		return m.initialForm.View()
+		pageView = m.initialForm.View()
 	} else if m.page == createUserPage {
-		return m.createUserForm.View()
+		pageView = m.createUserForm.View()
 	}
-	return "Page not implemented yet"
+	return lipgloss.JoinVertical(lipgloss.Left, header, pageView)
 }

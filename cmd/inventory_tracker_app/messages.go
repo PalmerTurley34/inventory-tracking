@@ -6,10 +6,20 @@ type errMsg struct {
 	err error
 }
 
-type userLoggedInMsg struct {
+type loginFailMsg struct {
+	err error
+}
+
+type loginSucessMsg struct {
 	userInfo db.User
 }
 
 type userLoggedOutMsg struct{}
 
-type userCreatedMsg struct{}
+type userCreateFailMsg struct {
+	err error
+}
+
+type userCreatedMsg struct {
+	userInfo db.User
+}

@@ -12,7 +12,7 @@ import (
 func NewInitialForm() *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
-			huh.NewNote().Title("Welcome! To the Toy Box").Description("Select an option to begin:"),
+			huh.NewNote().Title("Welcome to the Toy Box!").Description("Select an option to begin:"),
 			huh.NewSelect[string]().
 				Key("option").
 				Options(huh.NewOptions("Login", "Create Account")...),
@@ -23,6 +23,7 @@ func NewInitialForm() *huh.Form {
 func NewLoginForm() *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
+			huh.NewNote().Title("Enter username and password."),
 			huh.NewInput().
 				Key("username").
 				Prompt("Username: "),
@@ -57,7 +58,13 @@ func NewCreateUserForm() *huh.Form {
 
 			huh.NewInput().
 				Key("name").
-				Prompt("Name: "),
+				Prompt("Name: ").
+				Validate(func(s string) error {
+					if len(s) > 0 {
+						return nil
+					}
+					return fmt.Errorf("name cannot be blank")
+				}),
 
 			huh.NewInput().
 				Key("username").
