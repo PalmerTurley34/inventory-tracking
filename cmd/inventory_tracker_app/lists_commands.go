@@ -18,45 +18,46 @@ func (c command) FilterValue() string { return c.name + c.description }
 func (m model) DefaultCommands() []list.Item {
 	return []list.Item{
 		command{
+			name:        "Create Item",
+			description: "Add new item to toy box",
+			cmd:         startItemCreationCmd,
+		},
+
+		command{
 			name:        "Logout",
-			description: "Logout and return to the home page",
+			description: "Return to the home page",
 			cmd:         m.logoutUserCmd,
 		},
 
 		command{
 			name:        "Exit",
-			description: "Closes the program",
+			description: "Close the program",
 			cmd:         tea.Quit,
-		},
-
-		command{
-			name:        "Create Item",
-			description: "Create a new item and add it to the list",
-			cmd:         startItemCreationCmd,
 		},
 	}
 }
 
-func (m model) SelectedItemCommands() []list.Item {
+func (m model) ToyBoxItemCommands() []list.Item {
 	return []list.Item{
 		command{
 			name:        "Delete Item",
-			description: "Deletes the selected item forever",
+			description: "Delete item forever",
+			cmd:         startItemDeletionCmd,
 		},
 
 		command{
 			name:        "History",
-			description: "Show history of the selected item",
+			description: "Show item history",
 		},
 
 		command{
-			name:        "Check Out Item",
-			description: "Checks out the selected item",
+			name:        "Check Out",
+			description: "Add item to inventory",
 		},
 	}
 }
 
-func (m model) InventoryItemSelectedCommands() []list.Item {
+func (m model) InventorySelectedCommands() []list.Item {
 	return []list.Item{
 		command{
 			name:        "Check In Item",

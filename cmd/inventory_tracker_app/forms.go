@@ -122,6 +122,18 @@ func NewCreateItemForm() *huh.Form {
 	)
 }
 
+func NewConfimationForm() *huh.Form {
+	return huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Key("confirm").
+				Title("Confirm Action").
+				Affirmative("Yes").
+				Negative("No"),
+		),
+	)
+}
+
 func validatePassword(s string) error {
 	if len(s) < 8 {
 		return fmt.Errorf("password must be at least 8 characters")

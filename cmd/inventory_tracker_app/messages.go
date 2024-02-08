@@ -40,3 +40,13 @@ type itemCreateSuccessMsg struct {
 type itemCreateFailureMsg struct {
 	err error
 }
+
+type startItemDeletionMsg struct{}
+
+type itemDeleteSuccessMsg struct {
+	item inventoryItem
+}
+
+type itemDeleteFailureMsg struct {
+	err error
+}

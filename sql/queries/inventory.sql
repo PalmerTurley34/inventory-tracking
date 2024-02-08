@@ -5,3 +5,6 @@ RETURNING *;
 
 -- name: GetAllInventoryItems :many
 SELECT * FROM inventory_items;
+
+-- name: DeleteInventoryItem :exec
+DELETE FROM inventory_items where id = $1;

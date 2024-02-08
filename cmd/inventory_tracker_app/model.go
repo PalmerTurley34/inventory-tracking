@@ -8,7 +8,6 @@ import (
 	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -17,8 +16,9 @@ import (
 type appList int
 
 const (
-	invList appList = iota
+	toyBoxList appList = iota
 	cmdList
+	invList
 )
 
 type appPage int
@@ -29,23 +29,26 @@ const (
 	mainPage
 	createUserPage
 	createItemPage
+	confirmPage
 )
 
 type model struct {
 	// models
-	inventoryList list.Model
+	toyBoxList    list.Model
 	commandList   list.Model
-	appOutputView viewport.Model
+	inventoryList list.Model
 	// forms
-	loginForm      *huh.Form
-	initialForm    *huh.Form
-	createUserForm *huh.Form
-	createItemForm *huh.Form
+	loginForm        *huh.Form
+	initialForm      *huh.Form
+	createUserForm   *huh.Form
+	createItemForm   *huh.Form
+	confirmationForm *huh.Form
 	// app state
-	page      appPage
-	focused   appList
-	userInfo  db.User
-	headerMsg string
+	page           appPage
+	focused        appList
+	userInfo       db.User
+	headerMsg      string
+	isItemSelected bool
 	// loading spinner config
 	spinner       spinner.Model
 	spinnerActive bool
@@ -58,17 +61,17 @@ type model struct {
 
 func newModel() model {
 	m := model{
-		inventoryList: list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 40),
-		commandList:   list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 20),
-		appOutputView: viewport.New(30, 15),
-		focused:       invList,
+		toyBoxList:    list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 40),
+		commandList:   list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
+		inventoryList: list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
+		focused:       toyBoxList,
 		page:          initialPage,
 		headerMsg:     "Login to begin",
 		initialForm:   NewInitialForm(),
 		client:        &http.Client{Timeout: 10 * time.Second},
 		headerStyle:   successHeaderStyle,
 	}
-	m.inventoryList.Title = "Toy Box"
+	m.toyBoxList.Title = "Toy Box"
 	m.commandList.Title = "Commands"
 	m.commandList.SetItems(m.DefaultCommands())
 	m.resetSpinner()
@@ -76,7 +79,7 @@ func newModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.initialForm.Init(), m.getAllInventoryItems)
+	return tea.Batch(m.initialForm.Init(), m.getAllInventoryItemsCmd)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -91,7 +94,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.headerStyle = failureHeaderStyle
 
 	case allInventoryItemsMsg:
-		m.inventoryList.SetItems(msg.items)
+		m.toyBoxList.SetItems(msg.items)
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -140,7 +143,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.headerMsg = fmt.Sprintf("Successfully created item: %v", msg.item.Name)
 		m.headerStyle = successHeaderStyle
 		m.resetSpinner()
-		m.inventoryList.InsertItem(len(m.inventoryList.Items()), msg.item)
+		m.toyBoxList.InsertItem(len(m.toyBoxList.Items()), msg.item)
 
 	case itemCreateFailureMsg:
 		m.page = mainPage
@@ -154,6 +157,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.headerMsg = "Creating New Item..."
 		m.headerStyle = loadingHeaderStyle
 		return m, m.createItemForm.Init()
+
+	case startItemDeletionMsg:
+		m.page = confirmPage
+		m.confirmationForm = NewConfimationForm()
+		m.headerMsg = fmt.Sprintf("Deleting item: %s", m.inventoryList.Title)
+		m.headerStyle = loadingHeaderStyle
+		return m, m.confirmationForm.Init()
+
+	case itemDeleteSuccessMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Successfully deleted item: %v", msg.item.Name)
+		m.headerStyle = successHeaderStyle
+		m.resetSpinner()
+		m.toyBoxList.RemoveItem(m.toyBoxList.Cursor())
+		m.commandList.SetItems(m.DefaultCommands())
+		m.isItemSelected = false
+		m.focused = toyBoxList
+
+	case itemDeleteFailureMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Error deleting item: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+		m.resetSpinner()
 	}
 
 	// Update lists and forms depending on what page you're on //
@@ -171,6 +197,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if m.page == createItemPage {
 		return m.updateCreateItemPage(msg)
+	}
+	if m.page == confirmPage {
+		return m.updateConfirmationPage(msg)
 	}
 	return m, nil
 }
@@ -191,6 +220,8 @@ func (m model) View() string {
 		pageView = m.createUserForm.View()
 	} else if m.page == createItemPage {
 		pageView = m.createItemForm.View()
+	} else if m.page == confirmPage {
+		pageView = m.confirmationForm.View()
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, header, pageView)
 }

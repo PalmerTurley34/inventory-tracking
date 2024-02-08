@@ -13,6 +13,7 @@ func newV1Router(cfg *apiConfig) *chi.Mux {
 
 	router.Get("/inventory_items", cfg.getAllInventoryItems)
 	router.Post("/inventory_items", cfg.createInventoryItem)
+	router.Delete("/inventory_items/{ID}", cfg.deleteInventoryItem)
 
 	return router
 }
