@@ -54,7 +54,7 @@ func NewCreateUserForm() *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewNote().
-				Title("Enter you information:"),
+				Title("Enter your information:"),
 
 			huh.NewInput().
 				Key("name").
@@ -95,7 +95,31 @@ func NewCreateUserForm() *huh.Form {
 }
 
 func NewCreateItemForm() *huh.Form {
-	return nil
+	return huh.NewForm(
+		huh.NewGroup(
+			huh.NewNote().Title("Enter new item information"),
+
+			huh.NewInput().
+				Key("name").
+				Prompt("Item name: ").
+				Validate(func(s string) error {
+					if len(s) == 0 {
+						return fmt.Errorf("name cannot be blank")
+					}
+					return nil
+				}),
+
+			huh.NewConfirm().
+				Key("done").
+				Title("Confirm").
+				Validate(func(b bool) error {
+					if !b {
+						return fmt.Errorf("Shift+Tab to go back")
+					}
+					return nil
+				}),
+		),
+	)
 }
 
 func validatePassword(s string) error {

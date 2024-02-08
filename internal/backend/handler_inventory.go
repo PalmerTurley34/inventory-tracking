@@ -12,8 +12,7 @@ import (
 
 func (cfg *apiConfig) createInventoryItem(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
+		Name string `json:"name"`
 	}
 
 	params := parameters{}

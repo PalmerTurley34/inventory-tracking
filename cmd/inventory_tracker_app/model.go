@@ -40,6 +40,7 @@ type model struct {
 	loginForm      *huh.Form
 	initialForm    *huh.Form
 	createUserForm *huh.Form
+	createItemForm *huh.Form
 	// app state
 	page      appPage
 	focused   appList
@@ -57,134 +58,121 @@ type model struct {
 
 func newModel() model {
 	m := model{
-		inventoryList: list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 30),
-		commandList:   list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 10),
+		inventoryList: list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 40),
+		commandList:   list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 20),
 		appOutputView: viewport.New(30, 15),
 		focused:       invList,
 		page:          initialPage,
 		headerMsg:     "Login to begin",
 		initialForm:   NewInitialForm(),
-		spinner:       spinner.New(),
-		spinnerActive: false,
 		client:        &http.Client{Timeout: 10 * time.Second},
 		headerStyle:   successHeaderStyle,
 	}
 	m.inventoryList.Title = "Toy Box"
 	m.commandList.Title = "Commands"
+	m.commandList.SetItems(m.DefaultCommands())
+	m.resetSpinner()
 	return m
 }
 
 func (m model) Init() tea.Cmd {
-	return m.initialForm.Init()
+	return tea.Batch(m.initialForm.Init(), m.getAllInventoryItems)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC:
+		if msg.Type == tea.KeyCtrlC {
 			return m, tea.Quit
-		case tea.KeyTab:
-			if m.focused == invList {
-				m.focused = cmdList
-			} else {
-				m.focused = invList
-			}
 		}
+
+	case errMsg:
+		m.headerMsg = fmt.Sprintf("Error encountered: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+
+	case allInventoryItemsMsg:
+		m.inventoryList.SetItems(msg.items)
+
 	case spinner.TickMsg:
+		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
+
 	case loginSucessMsg:
 		m.headerMsg = fmt.Sprintf("Logged in as %s", msg.userInfo.Username)
 		m.headerStyle = successHeaderStyle
-		m.spinnerActive = false
-		m.spinner = spinner.New()
+		m.resetSpinner()
 		m.userInfo = msg.userInfo
 		m.page = mainPage
+
 	case loginFailMsg:
 		m.headerMsg = fmt.Sprintf("Error logging in: %v", msg.err)
 		m.headerStyle = failureHeaderStyle
-		m.spinnerActive = false
-		m.spinner = spinner.New()
+		m.resetSpinner()
 		m.loginForm = NewLoginForm()
-		initCmd := m.loginForm.Init()
-		return m, initCmd
-	case userCreatedMsg:
+		return m, m.loginForm.Init()
+
+	case userCreateSuccessMsg:
 		m.headerMsg = fmt.Sprintf("Successfully created user %s", msg.userInfo.Username)
 		m.headerStyle = successHeaderStyle
-		m.spinnerActive = false
-		m.spinner = spinner.New()
+		m.resetSpinner()
 		m.page = initialPage
 		m.initialForm = NewInitialForm()
-		initCmd := m.initialForm.Init()
-		return m, initCmd
+		return m, m.initialForm.Init()
+
 	case userCreateFailMsg:
 		m.headerMsg = fmt.Sprintf("Error creating user: %v", msg.err)
 		m.headerStyle = failureHeaderStyle
-		m.spinnerActive = false
-		m.spinner = spinner.New()
+		m.resetSpinner()
 		m.createUserForm = NewCreateUserForm()
-		initCmd := m.createUserForm.Init()
-		return m, initCmd
+		return m, m.createUserForm.Init()
+
+	case userLoggedOutMsg:
+		m.userInfo = db.User{}
+		m.initialForm = NewInitialForm()
+		m.page = initialPage
+		m.headerMsg = "Successfully logged out!"
+		m.headerStyle = successHeaderStyle
+		return m, m.initialForm.Init()
+
+	case itemCreateSuccessMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Successfully created item: %v", msg.item.Name)
+		m.headerStyle = successHeaderStyle
+		m.resetSpinner()
+		m.inventoryList.InsertItem(len(m.inventoryList.Items()), msg.item)
+
+	case itemCreateFailureMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Error creating item: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+		m.resetSpinner()
+
+	case startItemCreationMsg:
+		m.createItemForm = NewCreateItemForm()
+		m.page = createItemPage
+		m.headerMsg = "Creating New Item..."
+		m.headerStyle = loadingHeaderStyle
+		return m, m.createItemForm.Init()
 	}
 
 	// Update lists and forms depending on what page you're on //
 	if m.page == mainPage {
-		if m.focused == invList {
-			m.inventoryList, cmd = m.inventoryList.Update(msg)
-		} else {
-			m.commandList, cmd = m.commandList.Update(msg)
-		}
-	} else if m.page == loginPage {
-		var form tea.Model
-		form, cmd = m.loginForm.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			m.loginForm = f
-		}
-		if m.loginForm.State == huh.StateCompleted {
-			m.spinnerActive = true
-			m.spinnerMsg = "Logging In..."
-			cmds = append(cmds, m.loginUserCmd)
-			cmds = append(cmds, m.spinner.Tick)
-		}
-	} else if m.page == initialPage {
-		var form tea.Model
-		form, cmd = m.initialForm.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			m.initialForm = f
-		}
-		if m.initialForm.State == huh.StateCompleted {
-			if m.initialForm.GetString("option") == "Login" {
-				m.loginForm = NewLoginForm()
-				initCmd := m.loginForm.Init()
-				cmds = append(cmds, initCmd)
-				m.page = loginPage
-				return m, tea.Batch(cmds...)
-			} else {
-				m.createUserForm = NewCreateUserForm()
-				initCmd := m.createUserForm.Init()
-				cmds = append(cmds, initCmd)
-				m.page = createUserPage
-				return m, tea.Batch(cmds...)
-			}
-		}
-	} else if m.page == createUserPage {
-		var form tea.Model
-		form, cmd = m.createUserForm.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			m.createUserForm = f
-		}
-		if m.createUserForm.State == huh.StateCompleted {
-			m.spinnerActive = true
-			m.spinnerMsg = "Creating New User..."
-			cmds = append(cmds, m.createUserCmd)
-			cmds = append(cmds, m.spinner.Tick)
-		}
+		return m.updateMainPage(msg)
 	}
-	cmds = append(cmds, cmd)
-	return m, tea.Batch(cmds...)
+	if m.page == loginPage {
+		return m.updateLoginPage(msg)
+	}
+	if m.page == initialPage {
+		return m.updateInitialPage(msg)
+	}
+	if m.page == createUserPage {
+		return m.updateCreateUserPage(msg)
+	}
+	if m.page == createItemPage {
+		return m.updateCreateItemPage(msg)
+	}
+	return m, nil
 }
 
 func (m model) View() string {
@@ -194,25 +182,20 @@ func (m model) View() string {
 	header := m.headerStyle.Render(fmt.Sprintf("///%v//////", m.headerMsg))
 	var pageView string
 	if m.page == mainPage {
-		var invListStyle, cmdListStyle lipgloss.Style
-		if m.focused == invList {
-			invListStyle = focusedListStyle
-			cmdListStyle = unFocusedListStyle
-		} else {
-			invListStyle = unFocusedListStyle
-			cmdListStyle = focusedListStyle
-		}
-		invListView := invListStyle.Render(m.inventoryList.View())
-		cmdListView := cmdListStyle.Render(m.commandList.View())
-		outputView := unFocusedListStyle.Render(m.appOutputView.View())
-		rightSide := lipgloss.JoinVertical(lipgloss.Right, cmdListView, outputView)
-		pageView = lipgloss.JoinHorizontal(lipgloss.Top, invListView, rightSide)
+		pageView = m.getMainPageView()
 	} else if m.page == loginPage {
 		pageView = m.loginForm.View()
 	} else if m.page == initialPage {
 		pageView = m.initialForm.View()
 	} else if m.page == createUserPage {
 		pageView = m.createUserForm.View()
+	} else if m.page == createItemPage {
+		pageView = m.createItemForm.View()
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, header, pageView)
+}
+
+func (m *model) resetSpinner() {
+	m.spinnerActive = false
+	m.spinner = spinner.New(spinner.WithSpinner(spinner.Meter))
 }

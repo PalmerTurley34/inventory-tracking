@@ -7,6 +7,7 @@ import (
 	"time"
 
 	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -39,7 +40,7 @@ func (m model) createUserCmd() tea.Msg {
 	if err != nil {
 		return userCreateFailMsg{err}
 	}
-	return userCreatedMsg{user}
+	return userCreateSuccessMsg{user}
 }
 
 func (m model) loginUserCmd() tea.Msg {
@@ -69,6 +70,55 @@ func (m model) loginUserCmd() tea.Msg {
 }
 
 func (m model) logoutUserCmd() tea.Msg {
-	time.Sleep(3 * time.Second)
 	return userLoggedOutMsg{}
+}
+
+func (m model) createItemCmd() tea.Msg {
+	time.Sleep(time.Second)
+	itemName := m.createItemForm.GetString("name")
+	jsonStr := fmt.Sprintf(`{"name": "%v"}`, itemName)
+
+	response, err := m.client.Post(
+		"http://localhost:8080/v1/inventory_items",
+		"application-json",
+		bytes.NewBuffer([]byte(jsonStr)),
+	)
+	if err != nil {
+		return itemCreateFailureMsg{err}
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 201 {
+		return itemCreateFailureMsg{fmt.Errorf(response.Status)}
+	}
+	item := inventoryItem{}
+	err = json.NewDecoder(response.Body).Decode(&item)
+	if err != nil {
+		return itemCreateFailureMsg{err}
+	}
+	return itemCreateSuccessMsg{item}
+}
+
+func startItemCreationCmd() tea.Msg {
+	return startItemCreationMsg{}
+}
+
+func (m model) getAllInventoryItems() tea.Msg {
+	response, err := m.client.Get("http://localhost:8080/v1/inventory_items")
+	if err != nil {
+		return errMsg{err}
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return errMsg{err}
+	}
+	items := []inventoryItem{}
+	err = json.NewDecoder(response.Body).Decode(&items)
+	if err != nil {
+		return errMsg{err}
+	}
+	listItems := []list.Item{}
+	for _, i := range items {
+		listItems = append(listItems, i)
+	}
+	return allInventoryItemsMsg{listItems}
 }
