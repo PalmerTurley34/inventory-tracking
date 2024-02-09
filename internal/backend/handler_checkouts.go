@@ -15,11 +15,9 @@ func (cfg *apiConfig) checkOutItem(w http.ResponseWriter, r *http.Request, user 
 		respondWithError(w, 400, fmt.Sprintf("error with {ID} param: %v", err))
 		return
 	}
-	dueTime := time.Now().UTC().Add(24 * time.Hour)
 	item, err := cfg.DB.CheckOutItem(r.Context(), db.CheckOutItemParams{
 		ID:     id,
 		UserID: &user.ID,
-		DueAt:  &dueTime,
 	})
 	if err != nil {
 		respondWithError(w, 500, fmt.Sprintf("couldn't check out item: %v", err))
@@ -29,7 +27,7 @@ func (cfg *apiConfig) checkOutItem(w http.ResponseWriter, r *http.Request, user 
 		ID:              uuid.New(),
 		InventoryItemID: id,
 		UserID:          user.ID,
-		CheckedOutAt:    time.Now().UTC(),
+		CheckedOutAt:    time.Now(),
 	})
 	respondWithJSON(w, 200, item)
 }

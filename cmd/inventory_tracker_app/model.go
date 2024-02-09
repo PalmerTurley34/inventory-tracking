@@ -52,15 +52,15 @@ type model struct {
 	focused        appList
 	userInfo       db.User
 	headerMsg      string
+	headerStyle    lipgloss.Style
 	isItemSelected bool
+	confirmMsg     tea.Msg
 	// loading spinner config
 	spinner       spinner.Model
 	spinnerActive bool
 	spinnerMsg    string
 	// http clinet
 	client *http.Client
-	// styles
-	headerStyle lipgloss.Style
 }
 
 func newModel() model {
@@ -81,6 +81,7 @@ func newModel() model {
 	}
 	m.toyBoxList.Title = "Toy Box"
 	m.commandList.Title = "Commands"
+	m.inventoryList.Title = "Inventory"
 	m.commandList.SetItems(m.DefaultCommands())
 	m.resetSpinner()
 
@@ -143,7 +144,14 @@ func (m model) View() string {
 	if m.spinnerActive {
 		return loadingHeaderStyle.Render(fmt.Sprintf("%v %v", m.spinner.View(), m.spinnerMsg))
 	}
-	header := m.headerStyle.Render(fmt.Sprintf("///%v//////", m.headerMsg))
+	header := m.headerStyle.Render(fmt.Sprintf("///%v//////\n", m.headerMsg))
 	pageView := m.ViewMethods()[m.page]()
 	return lipgloss.JoinVertical(lipgloss.Left, header, pageView)
+}
+
+func (m *model) resetCommands() {
+	m.isItemSelected = false
+	m.commandList.SetItems(m.DefaultCommands())
+	m.commandList.ResetSelected()
+	m.focused = toyBoxList
 }

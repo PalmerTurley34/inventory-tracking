@@ -27,6 +27,7 @@ func (m model) updateLoadingPage(msg tea.Msg) (model, tea.Cmd) {
 		m.headerMsg = fmt.Sprintf("Error logging in: %v", msg.err)
 		m.headerStyle = failureHeaderStyle
 		m.resetSpinner()
+		m.page = loginPage
 		m.loginForm = NewLoginForm()
 		return m, m.loginForm.Init()
 
@@ -42,8 +43,9 @@ func (m model) updateLoadingPage(msg tea.Msg) (model, tea.Cmd) {
 		m.headerMsg = fmt.Sprintf("Error creating user: %v", msg.err)
 		m.headerStyle = failureHeaderStyle
 		m.resetSpinner()
-		m.createUserForm = NewCreateUserForm()
-		return m, m.createUserForm.Init()
+		m.initialForm = NewInitialForm()
+		m.page = initialPage
+		return m, m.initialForm.Init()
 
 	case itemCreateSuccessMsg:
 		m.page = mainPage
@@ -63,24 +65,36 @@ func (m model) updateLoadingPage(msg tea.Msg) (model, tea.Cmd) {
 		m.headerMsg = fmt.Sprintf("Successfully deleted item: %v", msg.item.Name)
 		m.headerStyle = successHeaderStyle
 		m.resetSpinner()
+		m.resetCommands()
 		m.toyBoxList.RemoveItem(m.toyBoxList.Cursor())
-		m.commandList.SetItems(m.DefaultCommands())
-		m.isItemSelected = false
-		m.focused = toyBoxList
 
 	case itemDeleteFailureMsg:
 		m.page = mainPage
 		m.headerMsg = fmt.Sprintf("Error deleting item: %v", msg.err)
 		m.headerStyle = failureHeaderStyle
 		m.resetSpinner()
-		m.commandList.SetItems(m.DefaultCommands())
-		m.isItemSelected = false
-		m.focused = toyBoxList
+		m.resetCommands()
+
+	case itemCheckOutSuccessMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Successfully checked out %s", msg.invItem.Name)
+		m.headerStyle = successHeaderStyle
+		m.resetSpinner()
+		m.resetCommands()
+		m.toyBoxList.SetItem(m.toyBoxList.Cursor(), msg.toyBoxItem)
+		m.inventoryList.InsertItem(len(m.inventoryList.Items()), msg.invItem)
+
+	case itemCheckOutFailureMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Error checking out: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+		m.resetSpinner()
+		m.resetCommands()
 	}
 	return m, nil
 }
 
 func (m *model) resetSpinner() {
 	m.spinnerActive = false
-	m.spinner = spinner.New(spinner.WithSpinner(spinner.Meter))
+	m.spinner = spinner.New(spinner.WithSpinner(spinner.Pulse))
 }

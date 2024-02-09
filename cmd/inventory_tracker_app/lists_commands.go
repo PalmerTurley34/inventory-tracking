@@ -53,6 +53,7 @@ func (m model) ToyBoxItemCommands() []list.Item {
 		command{
 			name:        "Check Out",
 			description: "Add item to inventory",
+			cmd:         startItemCheckOutCmd,
 		},
 	}
 }

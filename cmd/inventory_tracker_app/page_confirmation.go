@@ -13,10 +13,26 @@ func (m model) updateConfirmationPage(msg tea.Msg) (model, tea.Cmd) {
 		m.confirmationForm = f
 	}
 	if m.confirmationForm.State == huh.StateCompleted {
+		if !m.confirmationForm.GetBool("confirm") {
+			m.page = mainPage
+			m.isItemSelected = false
+			m.commandList.SetItems(m.DefaultCommands())
+			m.focused = toyBoxList
+			return m, nil
+		}
 		m.spinnerActive = true
-		m.spinnerMsg = "Deleting Item..."
 		m.page = loadingPage
-		cmds = append(cmds, m.deleteInventoryItemCmd, m.spinner.Tick)
+		var cmd tea.Cmd
+		switch m.confirmMsg.(type) {
+		case startItemDeletionMsg:
+			m.spinnerMsg = "Deleteing item..."
+			cmd = m.deleteInventoryItemCmd
+
+		case startItemCheckOutMsg:
+			m.spinnerMsg = "Checking out item..."
+			cmd = m.checkOutItemCmd
+		}
+		cmds = append(cmds, cmd, m.spinner.Tick)
 	}
 	return m, tea.Batch(cmds...)
 }

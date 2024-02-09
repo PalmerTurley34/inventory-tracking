@@ -47,8 +47,7 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 			}
 		case tea.KeyEsc:
 			if m.isItemSelected {
-				m.isItemSelected = false
-				m.commandList.SetItems(m.DefaultCommands())
+				m.resetCommands()
 				return m, nil
 			}
 		}
@@ -70,8 +69,17 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 	case startItemDeletionMsg:
 		m.page = confirmPage
 		m.confirmationForm = NewConfimationForm()
-		m.headerMsg = fmt.Sprintf("Deleting item: %s", m.inventoryList.Title)
+		m.headerMsg = fmt.Sprintf("Deleting item: %s", m.toyBoxList.SelectedItem().FilterValue())
 		m.headerStyle = loadingHeaderStyle
+		m.confirmMsg = msg
+		return m, m.confirmationForm.Init()
+
+	case startItemCheckOutMsg:
+		m.page = confirmPage
+		m.confirmationForm = NewConfimationForm()
+		m.headerMsg = fmt.Sprintf("Checking out: %s", m.toyBoxList.SelectedItem().FilterValue())
+		m.headerStyle = loadingHeaderStyle
+		m.confirmMsg = msg
 		return m, m.confirmationForm.Init()
 	}
 

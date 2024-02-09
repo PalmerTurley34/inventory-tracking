@@ -5,7 +5,9 @@ RETURNING *;
 
 -- name: CheckOutItem :one
 UPDATE inventory_items
-SET checked_out_at = NOW(), due_at = $3, user_id = $2
+SET checked_out_at = NOW(),
+    due_at = NOW() + INTERVAL '24 hours', 
+    user_id = $2
 WHERE id = $1
 RETURNING *;
 

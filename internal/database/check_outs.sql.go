@@ -37,7 +37,9 @@ func (q *Queries) CheckInItem(ctx context.Context, id uuid.UUID) (InventoryItem,
 
 const checkOutItem = `-- name: CheckOutItem :one
 UPDATE inventory_items
-SET checked_out_at = NOW(), due_at = $3, user_id = $2
+SET checked_out_at = NOW(),
+    due_at = NOW() + INTERVAL '24 hours', 
+    user_id = $2
 WHERE id = $1
 RETURNING id, created_at, updated_at, name, checked_out_at, checked_in_at, due_at, user_id
 `
@@ -45,11 +47,10 @@ RETURNING id, created_at, updated_at, name, checked_out_at, checked_in_at, due_a
 type CheckOutItemParams struct {
 	ID     uuid.UUID  `json:"id"`
 	UserID *uuid.UUID `json:"user_id"`
-	DueAt  *time.Time `json:"due_at"`
 }
 
 func (q *Queries) CheckOutItem(ctx context.Context, arg CheckOutItemParams) (InventoryItem, error) {
-	row := q.db.QueryRowContext(ctx, checkOutItem, arg.ID, arg.UserID, arg.DueAt)
+	row := q.db.QueryRowContext(ctx, checkOutItem, arg.ID, arg.UserID)
 	var i InventoryItem
 	err := row.Scan(
 		&i.ID,
