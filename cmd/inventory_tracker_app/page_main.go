@@ -35,12 +35,14 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 			}
 			if m.focused == toyBoxList {
 				m.commandList.SetItems(m.ToyBoxItemCommands())
+				m.commandList.ResetSelected()
 				m.isItemSelected = true
 				m.focused = cmdList
 				return m, nil
 			}
 			if m.focused == invList && len(m.inventoryList.Items()) > 0 {
 				m.commandList.SetItems(m.InventorySelectedCommands())
+				m.commandList.ResetSelected()
 				m.isItemSelected = true
 				m.focused = cmdList
 				return m, nil
@@ -78,6 +80,14 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 		m.page = confirmPage
 		m.confirmationForm = NewConfimationForm()
 		m.headerMsg = fmt.Sprintf("Checking out: %s", m.toyBoxList.SelectedItem().FilterValue())
+		m.headerStyle = loadingHeaderStyle
+		m.confirmMsg = msg
+		return m, m.confirmationForm.Init()
+
+	case startItemCheckInMsg:
+		m.page = confirmPage
+		m.confirmationForm = NewConfimationForm()
+		m.headerMsg = fmt.Sprintf("Checking in: %s", m.inventoryList.SelectedItem().FilterValue())
 		m.headerStyle = loadingHeaderStyle
 		m.confirmMsg = msg
 		return m, m.confirmationForm.Init()

@@ -46,8 +46,8 @@ func (m model) ToyBoxItemCommands() []list.Item {
 		},
 
 		command{
-			name:        "History",
-			description: "Show item history",
+			name:        "Info",
+			description: "Show item info/history",
 		},
 
 		command{
@@ -63,6 +63,7 @@ func (m model) InventorySelectedCommands() []list.Item {
 		command{
 			name:        "Check In Item",
 			description: "Checks in the selected item",
+			cmd:         startItemCheckInCmd,
 		},
 	}
 }

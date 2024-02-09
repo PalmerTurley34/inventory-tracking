@@ -31,6 +31,10 @@ func (m model) updateConfirmationPage(msg tea.Msg) (model, tea.Cmd) {
 		case startItemCheckOutMsg:
 			m.spinnerMsg = "Checking out item..."
 			cmd = m.checkOutItemCmd
+
+		case startItemCheckInMsg:
+			m.spinnerMsg = "Checking in item..."
+			cmd = m.itemCheckInCmd
 		}
 		cmds = append(cmds, cmd, m.spinner.Tick)
 	}

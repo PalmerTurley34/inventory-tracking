@@ -90,6 +90,25 @@ func (m model) updateLoadingPage(msg tea.Msg) (model, tea.Cmd) {
 		m.headerStyle = failureHeaderStyle
 		m.resetSpinner()
 		m.resetCommands()
+
+	case itemCheckInSuccessMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Successfully checked in %s", msg.item.Name)
+		m.headerStyle = successHeaderStyle
+		m.resetSpinner()
+		m.resetCommands()
+		m.focused = invList
+		m.inventoryList.RemoveItem(m.inventoryList.Cursor())
+		m.inventoryList.ResetSelected()
+		return m, m.getAllToyBoxItemsCmd
+
+	case itemCheckInFailureMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Error checking in: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+		m.resetSpinner()
+		m.resetCommands()
+		m.focused = invList
 	}
 	return m, nil
 }
