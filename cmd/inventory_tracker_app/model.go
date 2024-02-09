@@ -114,7 +114,7 @@ func (m model) ViewMethods() map[appPage]viewMethod {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.initialForm.Init(), m.getAllInventoryItemsCmd)
+	return tea.Batch(m.initialForm.Init(), m.getAllToyBoxItemsCmd)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -125,12 +125,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case errMsg:
-		m.headerMsg = fmt.Sprintf("Error encountered: %v", msg.err)
+		m.headerMsg = fmt.Sprintf("Error encountered: %v", msg.err.Error())
 		m.headerStyle = failureHeaderStyle
 
-	case allInventoryItemsMsg:
+	case allToyBoxItemsMsg:
 		m.toyBoxList.SetItems(msg.items)
 
+	case allInventoryItemsMsg:
+		m.inventoryList.SetItems(msg.items)
 	}
 
 	// Update lists and forms depending on what page you're on //

@@ -21,6 +21,7 @@ func (m model) updateLoadingPage(msg tea.Msg) (model, tea.Cmd) {
 		m.resetSpinner()
 		m.userInfo = msg.userInfo
 		m.page = mainPage
+		return m, m.getAllInventoryItemsCmd
 
 	case loginFailMsg:
 		m.headerMsg = fmt.Sprintf("Error logging in: %v", msg.err)

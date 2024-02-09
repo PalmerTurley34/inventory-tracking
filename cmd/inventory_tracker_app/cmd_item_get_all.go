@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type allInventoryItemsMsg struct {
+type allToyBoxItemsMsg struct {
 	items []list.Item
 }
 
@@ -15,7 +15,7 @@ type errMsg struct {
 	err error
 }
 
-func (m model) getAllInventoryItemsCmd() tea.Msg {
+func (m model) getAllToyBoxItemsCmd() tea.Msg {
 	response, err := m.client.Get("http://localhost:8080/v1/inventory_items")
 	if err != nil {
 		return errMsg{err}
@@ -33,5 +33,5 @@ func (m model) getAllInventoryItemsCmd() tea.Msg {
 	for _, i := range items {
 		listItems = append(listItems, i)
 	}
-	return allInventoryItemsMsg{listItems}
+	return allToyBoxItemsMsg{listItems}
 }
