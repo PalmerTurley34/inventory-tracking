@@ -12,7 +12,7 @@ import (
 type startItemCreationMsg struct{}
 
 type itemCreateSuccessMsg struct {
-	item inventoryItem
+	item toyBoxItem
 }
 
 type itemCreateFailureMsg struct {
@@ -40,7 +40,7 @@ func (m model) createItemCmd() tea.Msg {
 	if response.StatusCode != 201 {
 		return itemCreateFailureMsg{fmt.Errorf(response.Status)}
 	}
-	item := inventoryItem{}
+	item := toyBoxItem{}
 	err = json.NewDecoder(response.Body).Decode(&item)
 	if err != nil {
 		return itemCreateFailureMsg{err}

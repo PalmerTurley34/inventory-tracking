@@ -24,7 +24,7 @@ func (m model) getAllInventoryItemsCmd() tea.Msg {
 	if response.StatusCode != 200 {
 		return errMsg{err}
 	}
-	items := []inventoryItem{}
+	items := []toyBoxItem{}
 	err = json.NewDecoder(response.Body).Decode(&items)
 	if err != nil {
 		return errMsg{err}

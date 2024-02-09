@@ -11,7 +11,7 @@ import (
 type startItemDeletionMsg struct{}
 
 type itemDeleteSuccessMsg struct {
-	item inventoryItem
+	item toyBoxItem
 }
 
 type itemDeleteFailureMsg struct {
@@ -24,10 +24,10 @@ func startItemDeletionCmd() tea.Msg {
 
 func (m model) deleteInventoryItemCmd() tea.Msg {
 	time.Sleep(time.Second)
-	toDelete := m.inventoryList.SelectedItem()
-	item, _ := toDelete.(inventoryItem)
+	toDelete := m.toyBoxList.SelectedItem()
+	item, _ := toDelete.(toyBoxItem)
 	if item.UserID != nil {
-		return itemDeleteFailureMsg{fmt.Errorf("cannot delete checkout out item")}
+		return itemDeleteFailureMsg{fmt.Errorf("cannot delete checked out out item")}
 	}
 	req, err := http.NewRequest(
 		"DELETE",

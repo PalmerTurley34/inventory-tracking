@@ -90,3 +90,41 @@ func (q *Queries) GetAllInventoryItems(ctx context.Context) ([]InventoryItem, er
 	}
 	return items, nil
 }
+
+const getUserInventory = `-- name: GetUserInventory :many
+SELECT id, created_at, updated_at, name, checked_out_at, checked_in_at, due_at, user_id FROM inventory_items 
+WHERE user_id = $1
+ORDER BY due_at DESC
+`
+
+func (q *Queries) GetUserInventory(ctx context.Context, userID *uuid.UUID) ([]InventoryItem, error) {
+	rows, err := q.db.QueryContext(ctx, getUserInventory, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InventoryItem
+	for rows.Next() {
+		var i InventoryItem
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.CheckedOutAt,
+			&i.CheckedInAt,
+			&i.DueAt,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

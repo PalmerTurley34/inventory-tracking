@@ -10,8 +10,8 @@ const (
 )
 
 var (
-	focusedListStyle   = lipgloss.NewStyle().Margin(1, 2).Border(lipgloss.RoundedBorder(), true).BorderForeground(green)
-	unFocusedListStyle = lipgloss.NewStyle().Margin(1, 2).Border(lipgloss.RoundedBorder(), true).BorderForeground(grey)
+	focusedListStyle   = lipgloss.NewStyle().Margin(1, 2).Border(lipgloss.ThickBorder(), true).BorderForeground(green)
+	unFocusedListStyle = lipgloss.NewStyle().Margin(1, 2).Border(lipgloss.ThickBorder(), true).BorderForeground(grey)
 	successHeaderStyle = lipgloss.NewStyle().Foreground(green)
 	failureHeaderStyle = lipgloss.NewStyle().Foreground(red)
 	loadingHeaderStyle = lipgloss.NewStyle().Foreground(yellow)

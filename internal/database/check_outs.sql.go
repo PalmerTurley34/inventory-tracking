@@ -13,6 +13,58 @@ import (
 )
 
 const checkInItem = `-- name: CheckInItem :one
+UPDATE inventory_items
+SET checked_out_at = NULL, user_id = NULL, due_at = NULL, checked_in_at = NOW()
+WHERE id = $1
+RETURNING id, created_at, updated_at, name, checked_out_at, checked_in_at, due_at, user_id
+`
+
+func (q *Queries) CheckInItem(ctx context.Context, id uuid.UUID) (InventoryItem, error) {
+	row := q.db.QueryRowContext(ctx, checkInItem, id)
+	var i InventoryItem
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.CheckedOutAt,
+		&i.CheckedInAt,
+		&i.DueAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const checkOutItem = `-- name: CheckOutItem :one
+UPDATE inventory_items
+SET checked_out_at = NOW(), due_at = $3, user_id = $2
+WHERE id = $1
+RETURNING id, created_at, updated_at, name, checked_out_at, checked_in_at, due_at, user_id
+`
+
+type CheckOutItemParams struct {
+	ID     uuid.UUID  `json:"id"`
+	UserID *uuid.UUID `json:"user_id"`
+	DueAt  *time.Time `json:"due_at"`
+}
+
+func (q *Queries) CheckOutItem(ctx context.Context, arg CheckOutItemParams) (InventoryItem, error) {
+	row := q.db.QueryRowContext(ctx, checkOutItem, arg.ID, arg.UserID, arg.DueAt)
+	var i InventoryItem
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.CheckedOutAt,
+		&i.CheckedInAt,
+		&i.DueAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const logCheckIn = `-- name: LogCheckIn :one
 UPDATE inventory_check_outs
 SET checked_in_at = NOW(),
     updated_at = NOW()
@@ -22,13 +74,13 @@ AND checked_in_at IS NULL
 RETURNING id, user_id, inventory_item_id, created_at, updated_at, checked_out_at, checked_in_at
 `
 
-type CheckInItemParams struct {
+type LogCheckInParams struct {
 	InventoryItemID uuid.UUID `json:"inventory_item_id"`
 	UserID          uuid.UUID `json:"user_id"`
 }
 
-func (q *Queries) CheckInItem(ctx context.Context, arg CheckInItemParams) (InventoryCheckOut, error) {
-	row := q.db.QueryRowContext(ctx, checkInItem, arg.InventoryItemID, arg.UserID)
+func (q *Queries) LogCheckIn(ctx context.Context, arg LogCheckInParams) (InventoryCheckOut, error) {
+	row := q.db.QueryRowContext(ctx, logCheckIn, arg.InventoryItemID, arg.UserID)
 	var i InventoryCheckOut
 	err := row.Scan(
 		&i.ID,
@@ -42,26 +94,22 @@ func (q *Queries) CheckInItem(ctx context.Context, arg CheckInItemParams) (Inven
 	return i, err
 }
 
-const checkOutItem = `-- name: CheckOutItem :one
+const logCheckOut = `-- name: LogCheckOut :one
 INSERT INTO inventory_check_outs (id, created_at, updated_at, user_id, inventory_item_id, checked_out_at)
-VALUES ($1, $2, $3, $4, $5, $6)
+VALUES ($1, NOW(), NOW(), $2, $3, $4)
 RETURNING id, user_id, inventory_item_id, created_at, updated_at, checked_out_at, checked_in_at
 `
 
-type CheckOutItemParams struct {
+type LogCheckOutParams struct {
 	ID              uuid.UUID `json:"id"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
 	UserID          uuid.UUID `json:"user_id"`
 	InventoryItemID uuid.UUID `json:"inventory_item_id"`
 	CheckedOutAt    time.Time `json:"checked_out_at"`
 }
 
-func (q *Queries) CheckOutItem(ctx context.Context, arg CheckOutItemParams) (InventoryCheckOut, error) {
-	row := q.db.QueryRowContext(ctx, checkOutItem,
+func (q *Queries) LogCheckOut(ctx context.Context, arg LogCheckOutParams) (InventoryCheckOut, error) {
+	row := q.db.QueryRowContext(ctx, logCheckOut,
 		arg.ID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
 		arg.UserID,
 		arg.InventoryItemID,
 		arg.CheckedOutAt,

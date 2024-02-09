@@ -7,7 +7,6 @@ import (
 	"time"
 
 	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
-	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 )
 
@@ -47,12 +46,7 @@ func (cfg *apiConfig) getAllInventoryItems(w http.ResponseWriter, r *http.Reques
 }
 
 func (cfg *apiConfig) deleteInventoryItem(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "ID")
-	if idStr == "" {
-		respondWithError(w, 400, "Did not find {ID} param in url")
-		return
-	}
-	id, err := uuid.Parse(idStr)
+	id, err := GetUrlUUID(r)
 	if err != nil {
 		respondWithError(w, 400, "{ID} is not a valid uuid")
 		return
