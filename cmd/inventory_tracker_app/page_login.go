@@ -16,6 +16,7 @@ func (m model) updateLoginPage(msg tea.Msg) (model, tea.Cmd) {
 		m.spinnerActive = true
 		m.spinnerMsg = "Logging In..."
 		cmds = append(cmds, m.loginUserCmd, m.spinner.Tick)
+		m.page = loadingPage
 	}
 	return m, tea.Batch(cmds...)
 }

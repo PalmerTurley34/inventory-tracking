@@ -24,13 +24,17 @@ const (
 type appPage int
 
 const (
-	loginPage appPage = iota
-	initialPage
+	initialPage appPage = iota
+	loginPage
 	mainPage
 	createUserPage
 	createItemPage
 	confirmPage
+	loadingPage
 )
+
+type updateMethod func(tea.Msg) (model, tea.Cmd)
+type viewMethod func() string
 
 type model struct {
 	// models
@@ -61,21 +65,52 @@ type model struct {
 
 func newModel() model {
 	m := model{
-		toyBoxList:    list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 40),
-		commandList:   list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
-		inventoryList: list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
-		focused:       toyBoxList,
-		page:          initialPage,
-		headerMsg:     "Login to begin",
-		initialForm:   NewInitialForm(),
-		client:        &http.Client{Timeout: 10 * time.Second},
-		headerStyle:   successHeaderStyle,
+		toyBoxList:       list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 40),
+		commandList:      list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
+		inventoryList:    list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
+		focused:          toyBoxList,
+		page:             initialPage,
+		headerMsg:        "Login to begin",
+		initialForm:      NewInitialForm(),
+		loginForm:        NewLoginForm(),
+		createUserForm:   NewCreateUserForm(),
+		createItemForm:   NewCreateItemForm(),
+		confirmationForm: NewConfimationForm(),
+		client:           &http.Client{Timeout: 10 * time.Second},
+		headerStyle:      successHeaderStyle,
 	}
 	m.toyBoxList.Title = "Toy Box"
 	m.commandList.Title = "Commands"
 	m.commandList.SetItems(m.DefaultCommands())
 	m.resetSpinner()
+
 	return m
+}
+
+func (m model) UpdateMethods() map[appPage]updateMethod {
+	return map[appPage]updateMethod{
+		initialPage:    m.updateInitialPage,
+		loginPage:      m.updateLoginPage,
+		createUserPage: m.updateCreateUserPage,
+		createItemPage: m.updateCreateItemPage,
+		confirmPage:    m.updateConfirmationPage,
+		loadingPage:    m.updateLoadingPage,
+		mainPage:       m.updateMainPage,
+	}
+}
+
+func (m model) ViewMethods() map[appPage]viewMethod {
+	return map[appPage]viewMethod{
+		initialPage:    m.initialForm.View,
+		loginPage:      m.loginForm.View,
+		createUserPage: m.createUserForm.View,
+		createItemPage: m.createItemForm.View,
+		confirmPage:    m.confirmationForm.View,
+		loadingPage: func() string {
+			return loadingHeaderStyle.Render(fmt.Sprintf("%v %v", m.spinner.View(), m.spinnerMsg))
+		},
+		mainPage: m.getMainPageView,
+	}
 }
 
 func (m model) Init() tea.Cmd {
@@ -96,112 +131,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case allInventoryItemsMsg:
 		m.toyBoxList.SetItems(msg.items)
 
-	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
-
-	case loginSucessMsg:
-		m.headerMsg = fmt.Sprintf("Logged in as %s", msg.userInfo.Username)
-		m.headerStyle = successHeaderStyle
-		m.resetSpinner()
-		m.userInfo = msg.userInfo
-		m.page = mainPage
-
-	case loginFailMsg:
-		m.headerMsg = fmt.Sprintf("Error logging in: %v", msg.err)
-		m.headerStyle = failureHeaderStyle
-		m.resetSpinner()
-		m.loginForm = NewLoginForm()
-		return m, m.loginForm.Init()
-
-	case userCreateSuccessMsg:
-		m.headerMsg = fmt.Sprintf("Successfully created user %s", msg.userInfo.Username)
-		m.headerStyle = successHeaderStyle
-		m.resetSpinner()
-		m.page = initialPage
-		m.initialForm = NewInitialForm()
-		return m, m.initialForm.Init()
-
-	case userCreateFailMsg:
-		m.headerMsg = fmt.Sprintf("Error creating user: %v", msg.err)
-		m.headerStyle = failureHeaderStyle
-		m.resetSpinner()
-		m.createUserForm = NewCreateUserForm()
-		return m, m.createUserForm.Init()
-
-	case userLoggedOutMsg:
-		m.userInfo = db.User{}
-		m.initialForm = NewInitialForm()
-		m.page = initialPage
-		m.headerMsg = "Successfully logged out!"
-		m.headerStyle = successHeaderStyle
-		return m, m.initialForm.Init()
-
-	case itemCreateSuccessMsg:
-		m.page = mainPage
-		m.headerMsg = fmt.Sprintf("Successfully created item: %v", msg.item.Name)
-		m.headerStyle = successHeaderStyle
-		m.resetSpinner()
-		m.toyBoxList.InsertItem(len(m.toyBoxList.Items()), msg.item)
-
-	case itemCreateFailureMsg:
-		m.page = mainPage
-		m.headerMsg = fmt.Sprintf("Error creating item: %v", msg.err)
-		m.headerStyle = failureHeaderStyle
-		m.resetSpinner()
-
-	case startItemCreationMsg:
-		m.createItemForm = NewCreateItemForm()
-		m.page = createItemPage
-		m.headerMsg = "Creating New Item..."
-		m.headerStyle = loadingHeaderStyle
-		return m, m.createItemForm.Init()
-
-	case startItemDeletionMsg:
-		m.page = confirmPage
-		m.confirmationForm = NewConfimationForm()
-		m.headerMsg = fmt.Sprintf("Deleting item: %s", m.inventoryList.Title)
-		m.headerStyle = loadingHeaderStyle
-		return m, m.confirmationForm.Init()
-
-	case itemDeleteSuccessMsg:
-		m.page = mainPage
-		m.headerMsg = fmt.Sprintf("Successfully deleted item: %v", msg.item.Name)
-		m.headerStyle = successHeaderStyle
-		m.resetSpinner()
-		m.toyBoxList.RemoveItem(m.toyBoxList.Cursor())
-		m.commandList.SetItems(m.DefaultCommands())
-		m.isItemSelected = false
-		m.focused = toyBoxList
-
-	case itemDeleteFailureMsg:
-		m.page = mainPage
-		m.headerMsg = fmt.Sprintf("Error deleting item: %v", msg.err)
-		m.headerStyle = failureHeaderStyle
-		m.resetSpinner()
 	}
 
 	// Update lists and forms depending on what page you're on //
-	if m.page == mainPage {
-		return m.updateMainPage(msg)
-	}
-	if m.page == loginPage {
-		return m.updateLoginPage(msg)
-	}
-	if m.page == initialPage {
-		return m.updateInitialPage(msg)
-	}
-	if m.page == createUserPage {
-		return m.updateCreateUserPage(msg)
-	}
-	if m.page == createItemPage {
-		return m.updateCreateItemPage(msg)
-	}
-	if m.page == confirmPage {
-		return m.updateConfirmationPage(msg)
-	}
-	return m, nil
+	return m.UpdateMethods()[m.page](msg)
 }
 
 func (m model) View() string {
@@ -209,24 +142,6 @@ func (m model) View() string {
 		return loadingHeaderStyle.Render(fmt.Sprintf("%v %v", m.spinner.View(), m.spinnerMsg))
 	}
 	header := m.headerStyle.Render(fmt.Sprintf("///%v//////", m.headerMsg))
-	var pageView string
-	if m.page == mainPage {
-		pageView = m.getMainPageView()
-	} else if m.page == loginPage {
-		pageView = m.loginForm.View()
-	} else if m.page == initialPage {
-		pageView = m.initialForm.View()
-	} else if m.page == createUserPage {
-		pageView = m.createUserForm.View()
-	} else if m.page == createItemPage {
-		pageView = m.createItemForm.View()
-	} else if m.page == confirmPage {
-		pageView = m.confirmationForm.View()
-	}
+	pageView := m.ViewMethods()[m.page]()
 	return lipgloss.JoinVertical(lipgloss.Left, header, pageView)
-}
-
-func (m *model) resetSpinner() {
-	m.spinnerActive = false
-	m.spinner = spinner.New(spinner.WithSpinner(spinner.Meter))
 }

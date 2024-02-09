@@ -15,6 +15,7 @@ func (m model) updateConfirmationPage(msg tea.Msg) (model, tea.Cmd) {
 	if m.confirmationForm.State == huh.StateCompleted {
 		m.spinnerActive = true
 		m.spinnerMsg = "Deleting Item..."
+		m.page = loadingPage
 		cmds = append(cmds, m.deleteInventoryItemCmd, m.spinner.Tick)
 	}
 	return m, tea.Batch(cmds...)

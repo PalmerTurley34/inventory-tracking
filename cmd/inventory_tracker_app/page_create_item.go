@@ -15,6 +15,7 @@ func (m model) updateCreateItemPage(msg tea.Msg) (model, tea.Cmd) {
 	if m.createItemForm.State == huh.StateCompleted {
 		m.spinnerActive = true
 		m.spinnerMsg = "Creating New Item..."
+		m.page = loadingPage
 		cmds = append(cmds, m.createItemCmd, m.spinner.Tick)
 	}
 	return m, tea.Batch(cmds...)

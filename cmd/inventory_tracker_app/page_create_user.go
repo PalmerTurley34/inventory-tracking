@@ -15,6 +15,7 @@ func (m model) updateCreateUserPage(msg tea.Msg) (model, tea.Cmd) {
 	if m.createUserForm.State == huh.StateCompleted {
 		m.spinnerActive = true
 		m.spinnerMsg = "Creating New User..."
+		m.page = loadingPage
 		cmds = append(cmds, m.createUserCmd, m.spinner.Tick)
 	}
 	return m, tea.Batch(cmds...)

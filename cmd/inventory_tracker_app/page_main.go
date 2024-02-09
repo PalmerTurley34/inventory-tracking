@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
+
+	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
-	if msg, ok := msg.(tea.KeyMsg); ok {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyTab:
 			if m.isItemSelected {
@@ -33,11 +37,13 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 				m.commandList.SetItems(m.ToyBoxItemCommands())
 				m.isItemSelected = true
 				m.focused = cmdList
+				return m, nil
 			}
 			if m.focused == invList && len(m.inventoryList.Items()) > 0 {
 				m.commandList.SetItems(m.InventorySelectedCommands())
 				m.isItemSelected = true
 				m.focused = cmdList
+				return m, nil
 			}
 		case tea.KeyEsc:
 			if m.isItemSelected {
@@ -46,8 +52,30 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 				return m, nil
 			}
 		}
+	case userLoggedOutMsg:
+		m.userInfo = db.User{}
+		m.initialForm = NewInitialForm()
+		m.page = initialPage
+		m.headerMsg = "Successfully logged out!"
+		m.headerStyle = successHeaderStyle
+		return m, m.initialForm.Init()
+
+	case startItemCreationMsg:
+		m.createItemForm = NewCreateItemForm()
+		m.page = createItemPage
+		m.headerMsg = "Creating New Item..."
+		m.headerStyle = loadingHeaderStyle
+		return m, m.createItemForm.Init()
+
+	case startItemDeletionMsg:
+		m.page = confirmPage
+		m.confirmationForm = NewConfimationForm()
+		m.headerMsg = fmt.Sprintf("Deleting item: %s", m.inventoryList.Title)
+		m.headerStyle = loadingHeaderStyle
+		return m, m.confirmationForm.Init()
 	}
 
+	// let the focused list deal with the msg
 	var cmd tea.Cmd
 	if m.focused == toyBoxList {
 		m.toyBoxList, cmd = m.toyBoxList.Update(msg)
