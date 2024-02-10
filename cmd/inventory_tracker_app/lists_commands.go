@@ -48,6 +48,7 @@ func (m model) ToyBoxItemCommands() []list.Item {
 		command{
 			name:        "Info",
 			description: "Show item info/history",
+			cmd:         startItemHistoryCmd,
 		},
 
 		command{

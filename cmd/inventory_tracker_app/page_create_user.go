@@ -6,6 +6,13 @@ import (
 )
 
 func (m model) updateCreateUserPage(msg tea.Msg) (model, tea.Cmd) {
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		if msg.Type == tea.KeyEsc {
+			m.page = initialPage
+			m.initialForm = NewInitialForm()
+			return m, m.initialForm.Init()
+		}
+	}
 	var cmds []tea.Cmd
 	form, cmd := m.createUserForm.Update(msg)
 	cmds = append(cmds, cmd)

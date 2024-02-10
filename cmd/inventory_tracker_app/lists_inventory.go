@@ -12,6 +12,6 @@ type inventoryItem struct {
 
 func (i inventoryItem) Title() string { return i.Name }
 func (i inventoryItem) Description() string {
-	return fmt.Sprintf("Due At: %s", i.DueAt.Format("02 Jan 06 15:04"))
+	return fmt.Sprintf("Due At: %s", i.DueAt.Local().Format("Jan 02, 2006 15:04"))
 }
 func (i inventoryItem) FilterValue() string { return i.Name }

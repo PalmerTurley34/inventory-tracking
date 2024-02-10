@@ -16,6 +16,7 @@ github.com/charmbracelet/bubbles/list
 github.com/charmbracelet/bubbles/paginator
 github.com/charmbracelet/bubbles/runeutil
 github.com/charmbracelet/bubbles/spinner
+github.com/charmbracelet/bubbles/table
 github.com/charmbracelet/bubbles/textarea
 github.com/charmbracelet/bubbles/textarea/memoization
 github.com/charmbracelet/bubbles/textinput

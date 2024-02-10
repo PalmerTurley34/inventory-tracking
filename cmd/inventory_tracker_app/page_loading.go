@@ -109,6 +109,21 @@ func (m model) updateLoadingPage(msg tea.Msg) (model, tea.Cmd) {
 		m.resetSpinner()
 		m.resetCommands()
 		m.focused = invList
+
+	case itemHistorySuccessMsg:
+		m.page = itemHistoryPage
+		m.headerMsg = "Successfully retrieved item history"
+		m.headerStyle = successHeaderStyle
+		m.resetSpinner()
+		m.resetCommands()
+		m.historyTable.SetRows(msg.historyItems)
+
+	case itemHistoryFailureMsg:
+		m.page = mainPage
+		m.headerMsg = fmt.Sprintf("Error retrieving history: %v", msg.err)
+		m.headerStyle = failureHeaderStyle
+		m.resetSpinner()
+		m.resetCommands()
 	}
 	return m, nil
 }

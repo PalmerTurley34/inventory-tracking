@@ -65,6 +65,50 @@ func (q *Queries) CheckOutItem(ctx context.Context, arg CheckOutItemParams) (Inv
 	return i, err
 }
 
+const getItemHistory = `-- name: GetItemHistory :many
+select inventory_items.name, users.username, inventory_check_outs.checked_out_at, inventory_check_outs.checked_in_at
+from inventory_check_outs
+join inventory_items on inventory_check_outs.inventory_item_id = inventory_items.id
+join users on inventory_check_outs.user_id = users.id
+where inventory_check_outs.inventory_item_id = $1
+order by inventory_check_outs.checked_out_at desc
+`
+
+type GetItemHistoryRow struct {
+	Name         string     `json:"name"`
+	Username     string     `json:"username"`
+	CheckedOutAt time.Time  `json:"checked_out_at"`
+	CheckedInAt  *time.Time `json:"checked_in_at"`
+}
+
+func (q *Queries) GetItemHistory(ctx context.Context, inventoryItemID uuid.UUID) ([]GetItemHistoryRow, error) {
+	rows, err := q.db.QueryContext(ctx, getItemHistory, inventoryItemID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetItemHistoryRow
+	for rows.Next() {
+		var i GetItemHistoryRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Username,
+			&i.CheckedOutAt,
+			&i.CheckedInAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const logCheckIn = `-- name: LogCheckIn :one
 UPDATE inventory_check_outs
 SET checked_in_at = NOW(),
@@ -97,7 +141,7 @@ func (q *Queries) LogCheckIn(ctx context.Context, arg LogCheckInParams) (Invento
 
 const logCheckOut = `-- name: LogCheckOut :one
 INSERT INTO inventory_check_outs (id, created_at, updated_at, user_id, inventory_item_id, checked_out_at)
-VALUES ($1, NOW(), NOW(), $2, $3, $4)
+VALUES ($1, NOW(), NOW(), $2, $3, NOW())
 RETURNING id, user_id, inventory_item_id, created_at, updated_at, checked_out_at, checked_in_at
 `
 
@@ -105,16 +149,10 @@ type LogCheckOutParams struct {
 	ID              uuid.UUID `json:"id"`
 	UserID          uuid.UUID `json:"user_id"`
 	InventoryItemID uuid.UUID `json:"inventory_item_id"`
-	CheckedOutAt    time.Time `json:"checked_out_at"`
 }
 
 func (q *Queries) LogCheckOut(ctx context.Context, arg LogCheckOutParams) (InventoryCheckOut, error) {
-	row := q.db.QueryRowContext(ctx, logCheckOut,
-		arg.ID,
-		arg.UserID,
-		arg.InventoryItemID,
-		arg.CheckedOutAt,
-	)
+	row := q.db.QueryRowContext(ctx, logCheckOut, arg.ID, arg.UserID, arg.InventoryItemID)
 	var i InventoryCheckOut
 	err := row.Scan(
 		&i.ID,

@@ -8,6 +8,7 @@ import (
 	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -31,6 +32,7 @@ const (
 	createItemPage
 	confirmPage
 	loadingPage
+	itemHistoryPage
 )
 
 type updateMethod func(tea.Msg) (model, tea.Cmd)
@@ -41,6 +43,7 @@ type model struct {
 	toyBoxList    list.Model
 	commandList   list.Model
 	inventoryList list.Model
+	historyTable  table.Model
 	// forms
 	loginForm        *huh.Form
 	initialForm      *huh.Form
@@ -68,6 +71,7 @@ func newModel() model {
 		toyBoxList:       list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 40),
 		commandList:      list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
 		inventoryList:    list.New([]list.Item{}, list.NewDefaultDelegate(), 30, 18),
+		historyTable:     table.New(table.WithColumns(historyColumns)),
 		focused:          toyBoxList,
 		page:             initialPage,
 		headerMsg:        "Login to begin",
@@ -90,13 +94,14 @@ func newModel() model {
 
 func (m model) UpdateMethods() map[appPage]updateMethod {
 	return map[appPage]updateMethod{
-		initialPage:    m.updateInitialPage,
-		loginPage:      m.updateLoginPage,
-		createUserPage: m.updateCreateUserPage,
-		createItemPage: m.updateCreateItemPage,
-		confirmPage:    m.updateConfirmationPage,
-		loadingPage:    m.updateLoadingPage,
-		mainPage:       m.updateMainPage,
+		initialPage:     m.updateInitialPage,
+		loginPage:       m.updateLoginPage,
+		createUserPage:  m.updateCreateUserPage,
+		createItemPage:  m.updateCreateItemPage,
+		confirmPage:     m.updateConfirmationPage,
+		loadingPage:     m.updateLoadingPage,
+		itemHistoryPage: m.updateItemHistoryPage,
+		mainPage:        m.updateMainPage,
 	}
 }
 
@@ -110,7 +115,8 @@ func (m model) ViewMethods() map[appPage]viewMethod {
 		loadingPage: func() string {
 			return loadingHeaderStyle.Render(fmt.Sprintf("%v %v", m.spinner.View(), m.spinnerMsg))
 		},
-		mainPage: m.getMainPageView,
+		itemHistoryPage: m.historyTable.View,
+		mainPage:        m.getMainPageView,
 	}
 }
 

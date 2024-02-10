@@ -50,8 +50,8 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 		case tea.KeyEsc:
 			if m.isItemSelected {
 				m.resetCommands()
-				return m, nil
 			}
+			return m, nil
 		}
 	case userLoggedOutMsg:
 		m.userInfo = db.User{}
@@ -91,6 +91,11 @@ func (m model) updateMainPage(msg tea.Msg) (model, tea.Cmd) {
 		m.headerStyle = loadingHeaderStyle
 		m.confirmMsg = msg
 		return m, m.confirmationForm.Init()
+
+	case startItemHistoryMsg:
+		m.page = loadingPage
+		m.spinnerMsg = "Retrieving item history"
+		return m, tea.Batch(m.spinner.Tick, m.itemHistoryCmd)
 	}
 
 	// let the focused list deal with the msg

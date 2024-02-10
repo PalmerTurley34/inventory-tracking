@@ -6,6 +6,12 @@ import (
 )
 
 func (m model) updateCreateItemPage(msg tea.Msg) (model, tea.Cmd) {
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		if msg.Type == tea.KeyEsc {
+			m.page = mainPage
+			return m, nil
+		}
+	}
 	var cmds []tea.Cmd
 	form, cmd := m.createItemForm.Update(msg)
 	cmds = append(cmds, cmd)

@@ -3,7 +3,6 @@ package backend
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	db "github.com/PalmerTurley34/inventory-tracking/internal/database"
 	"github.com/google/uuid"
@@ -27,7 +26,6 @@ func (cfg *apiConfig) checkOutItem(w http.ResponseWriter, r *http.Request, user 
 		ID:              uuid.New(),
 		InventoryItemID: id,
 		UserID:          user.ID,
-		CheckedOutAt:    time.Now(),
 	})
 	respondWithJSON(w, 200, item)
 }
