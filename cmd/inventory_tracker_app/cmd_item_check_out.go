@@ -34,7 +34,7 @@ func (m model) checkOutItemCmd() tea.Msg {
 	}
 	req, _ := http.NewRequest(
 		"POST",
-		fmt.Sprintf("http://localhost:8080/v1/checkout/%s", item.ID),
+		fmt.Sprintf("http://localhost:8080/v1/inventory_items/checkout/%s", item.ID),
 		nil,
 	)
 	req.Header.Add("Authorization", fmt.Sprintf("ApiKey %s", m.userInfo.ApiKey))

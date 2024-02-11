@@ -18,12 +18,12 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("couldn't decode request body: %v", err))
+		respondWithError(w, 401, fmt.Sprintf("couldn't decode request body: %v", err))
 		return
 	}
 	user, err := cfg.DB.GetUserByUsername(r.Context(), params.Username)
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("couldn't get user data: %v", err))
+		respondWithError(w, 401, fmt.Sprintf("couldn't get user data: %v", err))
 		return
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password))

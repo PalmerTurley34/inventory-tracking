@@ -19,7 +19,7 @@ func (cfg *apiConfig) checkOutItem(w http.ResponseWriter, r *http.Request, user 
 		UserID: &user.ID,
 	})
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("couldn't check out item: %v", err))
+		respondWithError(w, 400, fmt.Sprintf("couldn't check out item: %v", err))
 		return
 	}
 	cfg.DB.LogCheckOut(r.Context(), db.LogCheckOutParams{
@@ -38,7 +38,7 @@ func (cfg *apiConfig) checkInItem(w http.ResponseWriter, r *http.Request, user d
 	}
 	item, err := cfg.DB.CheckInItem(r.Context(), id)
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("couldn't check in item: %v", err))
+		respondWithError(w, 400, fmt.Sprintf("couldn't check in item: %v", err))
 		return
 	}
 	cfg.DB.LogCheckIn(r.Context(), db.LogCheckInParams{

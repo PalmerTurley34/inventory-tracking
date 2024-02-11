@@ -17,8 +17,8 @@ func newV1Router(cfg *apiConfig) *chi.Mux {
 	router.Delete("/inventory_items/{ID}", cfg.deleteInventoryItem)
 	router.Get("/inventory_items/history/{ID}", cfg.getItemHistory)
 
-	router.Post("/checkout/{ID}", cfg.middlewareAuth(cfg.checkOutItem))
-	router.Post("/checkin/{ID}", cfg.middlewareAuth(cfg.checkInItem))
+	router.Post("/inventory_items/checkout/{ID}", cfg.middlewareAuth(cfg.checkOutItem))
+	router.Post("/inventory_items/checkin/{ID}", cfg.middlewareAuth(cfg.checkInItem))
 
 	return router
 }

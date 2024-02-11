@@ -40,21 +40,21 @@ func (m model) DefaultCommands() []list.Item {
 func (m model) ToyBoxItemCommands() []list.Item {
 	return []list.Item{
 		command{
-			name:        "Delete Item",
-			description: "Delete item forever",
-			cmd:         startItemDeletionCmd,
+			name:        "Check Out",
+			description: "Add item to inventory",
+			cmd:         startItemCheckOutCmd,
 		},
 
 		command{
-			name:        "Info",
+			name:        "History",
 			description: "Show item info/history",
 			cmd:         startItemHistoryCmd,
 		},
 
 		command{
-			name:        "Check Out",
-			description: "Add item to inventory",
-			cmd:         startItemCheckOutCmd,
+			name:        "Delete Item",
+			description: "Delete item forever",
+			cmd:         startItemDeletionCmd,
 		},
 	}
 }

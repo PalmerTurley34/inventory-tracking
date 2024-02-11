@@ -27,7 +27,7 @@ func (m model) itemCheckInCmd() tea.Msg {
 	item, _ := toCheckIn.(inventoryItem)
 	req, _ := http.NewRequest(
 		"POST",
-		fmt.Sprintf("http://localhost:8080/v1/checkin/%s", item.ID),
+		fmt.Sprintf("http://localhost:8080/v1/inventory_items/checkin/%s", item.ID),
 		nil,
 	)
 	req.Header.Add("Authorization", fmt.Sprintf("ApiKey %s", m.userInfo.ApiKey))

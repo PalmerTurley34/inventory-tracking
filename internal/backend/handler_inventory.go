@@ -23,6 +23,10 @@ func (cfg *apiConfig) createInventoryItem(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if params.Name == "" {
+		respondWithError(w, 400, "couldn't find name field in request body")
+	}
+
 	newItem, err := cfg.DB.CreateInventoryItem(r.Context(), db.CreateInventoryItemParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
