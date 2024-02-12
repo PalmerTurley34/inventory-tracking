@@ -25,7 +25,8 @@ func healthcheck(w http.ResponseWriter, r *http.Request) {
 func StartBackendServer() {
 	godotenv.Load()
 
-	port := os.Getenv("PORT")
+	// port := os.Getenv("PORT")
+	port := "8080"
 	dbURL := os.Getenv("DB_URL")
 
 	if port == "" {

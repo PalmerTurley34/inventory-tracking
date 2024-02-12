@@ -2,12 +2,15 @@
 
 This is a TUI app, built with the [bubbletea](https://github.com/charmbracelet/bubbletea/tree/master) framework in Go. The backend is an HTTP REST API built in Go, also using a PostgreSQL database. Documentation for the app can be found [here](docs/bubbletea%20app/README.md). And documentation for the REST API can be found [here](docs/REST%20API/README.md).
 
-Tech Stack:
+## Tech Stack
 
 * [Bubbletea](https://github.com/charmbracelet/bubbletea/tree/master) TUI library
 * [Chi](https://github.com/go-chi/chi) HTTP library
 * [SQLC](https://sqlc.dev/) SQL code generation tool
+* [goose](https://github.com/pressly/goose) database migration tool
 * [postgreSQL](https://www.postgresql.org/) database
+
+## Description
 
 I created this app as a model for sharing toys for my toddlers who are trying to learn the concept.
 
@@ -29,3 +32,29 @@ The app also contains other pages for filling out forms, view an item's check ou
 <img src="docs/images/create_user_page.png" height="300">
 
 <img src="docs/images/item_history.png" height="200">
+
+## Setup and Installation
+
+### Environment Variables
+
+The only environment variable required is `DB_URL`. This variable is used by the HTTP server to connect to the database. The expected database type is postgres. I use a `.env` file in the root directory of the project for this, with this line:
+
+`DB_URL=postgres://palmer:@localhost:5432/my_database`
+
+### Database
+
+The database schema can be found in `sql/shema/`. I used [goose](https://github.com/pressly/goose) to handle the migrations. From within the `sql/schema/` directory run:
+
+`goose postgres <DB_URL> up`
+
+to create the tables.
+
+### Build and Run
+
+You can compile the executable from the root directory of the project:
+
+`go build ./cmd/inventory_tracker_app`
+
+run the executable:
+
+`./inventory_tracker_app`
