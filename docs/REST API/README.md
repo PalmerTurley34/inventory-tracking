@@ -1,5 +1,7 @@
 # REST API Docs
 
+All code for the the API can be found in the internal/backend/ directory.
+
 The toy box API has endpoints for users to create and interact with inventory items. Authenticated enpoints must have an `Authorization: ApiKey <token>` header in the request.
 
 ## Open Endpoints
